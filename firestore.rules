@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() {
+      return request.resource.data;
+    }
+    function existing() {
+      return resource.data;
+    }
+
+    // User Profile Validation
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt'])
+        && data.uid is string && data.uid == request.auth.uid
+        && data.email is string && data.email.size() <= 256
+        && data.createdAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserProfile(incoming());
+      allow update: if isOwner(userId) && isValidUserProfile(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'settings']);
+    }
+
+    // User Stats Validation
+    function isValidUserStats(data) {
+      return data.userId == request.auth.uid
+        && data.topWpm is number && data.topWpm >= 0
+        && data.avgWpm is number && data.avgWpm >= 0
+        && data.avgAccuracy is number && data.avgAccuracy >= 0 && data.avgAccuracy <= 100
+        && data.totalSessions is int && data.totalSessions >= 0
+        && data.totalPracticeTime is int && data.totalPracticeTime >= 0
+        && data.lastActive is timestamp;
+    }
+
+    match /stats/{userId} {
+      allow get: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidUserStats(incoming());
+    }
+
+    // Typing Session Validation
+    function isValidSession(data) {
+      return data.userId == request.auth.uid
+        && data.mode in ['learning', 'game']
+        && data.wpm is number && data.wpm >= 0
+        && data.accuracy is number && data.accuracy >= 0 && data.accuracy <= 100
+        && data.errorCount is int && data.errorCount >= 0
+        && data.duration is int && data.duration >= 0
+        && data.timestamp == request.time;
+    }
+
+    match /sessions/{sessionId} {
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidSession(incoming());
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "SwiftTyper",
+  "description": "A high-performance, professional web application for typing learning, practice, and gamified word challenges.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

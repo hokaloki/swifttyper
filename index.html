@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Google AI Studio App</title>
+    <script>
+      // Defensive shim for window.fetch in restricted sandbox environments
+      (function() {
+        var originalFetch = window.fetch;
+        if (originalFetch) {
+          try {
+            Object.defineProperty(window, 'fetch', {
+              configurable: true,
+              enumerable: true,
+              get: function() { return originalFetch; },
+              set: function() { /* No-op to prevent TypeError */ }
+            });
+          } catch (e) {}
+        }
+
+        // Suppress benign Vite WebSocket connection errors
+        window.addEventListener('unhandledrejection', function(event) {
+          if (event.reason && (
+            event.reason.message === 'WebSocket closed without opened.' ||
+            (typeof event.reason === 'string' && event.reason.includes('vite') && event.reason.includes('websocket'))
+          )) {
+            event.preventDefault();
+          }
+        });
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
