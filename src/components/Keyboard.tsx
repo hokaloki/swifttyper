@@ -185,10 +185,10 @@ export const Keyboard: React.FC<KeyboardProps> = ({ activeKey, activeFinger }) =
                   />
                 );
               })}
-            </motion.div>
+            </div>
           ))}
         </motion.div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 };
